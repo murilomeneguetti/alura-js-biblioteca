@@ -1,19 +1,29 @@
 import chalk from "chalk";
 import fs from 'fs';
 import pegaArquivo from "./index.js";
+import listaValidada from "./http-validacao.js";
 
 const caminho = process.argv;
 
-function imprimeLista(resultado, identificador = '') {
-    console.log(
-        chalk.yellow('lista de links: '),
-        chalk.black.bgGreen(identificador),
-        resultado);
+async function imprimeLista(valida, resultado, identificador = '') {
+
+    if (valida) {
+        console.log(
+            chalk.yellow('lista validada: '),
+            chalk.black.bgGreen(identificador),
+            await listaValidada(resultado));
+    } else {
+        console.log(
+            chalk.yellow('lista de links: '),
+            chalk.black.bgGreen(identificador),
+            resultado);
+    }
 }
 
 //função processaTexto deve ser assíncrona pq ela chama a função pegaArquivo, que é assíncrona
 async function processaTexto(argumentos) {
     const caminho = argumentos[2];
+    const valida = argumentos[3] === '--valida';
 
     //verificando se o caminho informado existe
     try {
@@ -29,15 +39,17 @@ async function processaTexto(argumentos) {
     //se for um diretório, passa por todos os arquivos dentro dele
     if (fs.lstatSync(caminho).isFile()) {
         const resultado = await pegaArquivo(caminho);
-        imprimeLista(resultado);
+        imprimeLista(valida, resultado);
     } else if (fs.lstatSync(caminho).isDirectory()) {
         const arquivos = await fs.promises.readdir(caminho);
         arquivos.forEach(async (nomeDeArquivo) => {
             const lista = await pegaArquivo(`${caminho}/${nomeDeArquivo}`);
-            imprimeLista(lista, nomeDeArquivo);
+            imprimeLista(valida, lista, nomeDeArquivo);
         })
     }
 }
 
 processaTexto(caminho);
 //para funcionar, tem q rodar no terminal: node src/cli.js ./arquivos/texto.md
+
+//[gatinho salsicha](http://gatinhosalsicha.com.br/)
